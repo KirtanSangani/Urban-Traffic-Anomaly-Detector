@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: traffic_db
+    environment:
+      POSTGRES_USER: traffic_user
+      POSTGRES_PASSWORD: traffic_pass
+      POSTGRES_DB: traffic_anomaly
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U traffic_user -d traffic_anomaly"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traffic_network
+
+  analyzer:
+    build:
+      context: ..
+      dockerfile: infastructure/Dockerfile.analyzer
+    container_name: traffic_analyzer
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://traffic_user:traffic_pass@db:5432/traffic_anomaly
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../src:/app/src
+      - ../data:/app/data
+    networks:
+      - traffic_network
+
+volumes:
+  postgres_data:
+
+networks:
+  traffic_network:
+    driver: bridge
+
