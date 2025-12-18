@@ -36,6 +36,8 @@ services:
     networks:
       - traffic_network
 
+    command: ["tail", "-f", "/dev/null"]
+
 volumes:
   postgres_data:
 
