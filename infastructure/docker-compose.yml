@@ -1,15 +1,21 @@
+# Docker Compose Configuration
 services:
   db:
+    # PostGIS Database
     image: postgis/postgis:15-3.4-alpine
     container_name: traffic_db
     environment:
+      # Database Credentials
       POSTGRES_USER: traffic_user
       POSTGRES_PASSWORD: traffic_pass
       POSTGRES_DB: traffic_anomaly
+    # Database Ports
     ports:
       - "5432:5432"
+    # Database Volumes
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Database Healthcheck
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U traffic_user -d traffic_anomaly"]
       interval: 10s
@@ -19,28 +25,35 @@ services:
       - traffic_network
 
   analyzer:
+    # Analyzer Container
     build:
       context: ..
       dockerfile: infastructure/Dockerfile.analyzer
     container_name: traffic_analyzer
+    # Dependencies
     depends_on:
       db:
         condition: service_healthy
+    # Environment Variables
     environment:
       DATABASE_URL: postgresql://traffic_user:traffic_pass@db:5432/traffic_anomaly
+    # Ports
     ports:
       - "8000:8000"
+    # Volumes
     volumes:
       - ../src:/app/src
       - ../data:/app/data
+    # Networks
     networks:
       - traffic_network
 
     command: ["tail", "-f", "/dev/null"]
-
+# Volumes
 volumes:
   postgres_data:
 
+# Networks
 networks:
   traffic_network:
     driver: bridge
